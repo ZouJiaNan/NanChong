@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.security.demo.mapper.DepartmentMapper">
+    <resultMap id="resultDept" type="Department">
+        <id column="id" property="id"/>
+        <result column="create_by" property="create_by"></result>
+        <result column="create_time" property="create_time"></result>
+        <result column="del_flag" property="del_flag"></result>
+        <result column="update_by" property="update_by"></result>
+        <result column="update_time" property="update_time"></result>
+        <result column="parent_id" property="parent_id"></result>
+        <result column="sort_order" property="sort_order"></result>
+        <result column="status" property="status"></result>
+        <result column="title" property="title"></result>
+        <result column="is_parent" property="is_parent"></result>
+        <collection property="childs" ofType="Department">
+            <id column="child_id" property="id"/>
+            <result column="child_create_by" property="create_by"></result>
+            <result column="child_create_time" property="create_time"></result>
+            <result column="child_del_flag" property="del_flag"></result>
+            <result column="child_update_by" property="update_by"></result>
+            <result column="child_update_time" property="update_time"></result>
+            <result column="child_parent_id" property="parent_id"></result>
+            <result column="child_sort_order" property="sort_order"></result>
+            <result column="child_status" property="status"></result>
+            <result column="child_title" property="title"></result>
+            <result column="child_is_parent" property="is_parent"></result>
+        </collection>
+    </resultMap>
+
+    <select id="count" resultType="_int">
+        select count(*) from t_department;
+    </select>
+
+    <select id="findAll" parameterType="Department" resultMap="resultDept">
+        select
+            roots.*,
+            childs.id as child_id,
+            childs.create_by as child_create_by,
+            childs.create_time as child_create_time,
+            childs.del_flag as child_del_flag,
+            childs.update_by as child_update_by,
+            childs.update_time as child_update_time,
+            childs.parent_id as child_parent_id,
+            childs.sort_order as child_sort_order,
+            childs.status as child_status,
+            childs.title as child_title,
+            childs.is_parent as child_is_parent
+        from (select * from t_department where is_parent=1) as roots,t_department as childs where roots.id=childs.parent_id
+        limit #{pageNum},#{pageSize};
+    </select>
+
+    <select id="totalOffindAll" resultType="_int">
+        select
+        count(*)
+        from (select * from t_department where is_parent=1) as roots,t_department as childs where roots.id=childs.parent_id;
+    </select>
+
+    <select id="findRoot" parameterType="Department">
+        select
+            roots.*,
+            childs.id as child_id,
+            childs.create_by as child_create_by,
+            childs.create_time as child_create_time,
+            childs.del_flag as child_del_flag,
+            childs.update_by as child_update_by,
+            childs.update_time as child_update_time,
+            childs.parent_id as child_parent_id,
+            childs.sort_order as child_sort_order,
+            childs.status as child_status,
+            childs.title as child_title,
+            childs.is_parent as child_is_parent
+        from (select * from t_department where is_parent=1) as roots,t_department as childs where roots.id=childs.parent_id
+				and roots.id=#{id}
+		limit #{pageNum},#{pageSize};
+    </select>
+
+    <select id="totalOffindRoot" parameterType="Department" resultType="_int">
+        select
+        count(*)
+        from (select * from t_department where is_parent=1) as roots,t_department as childs where roots.id=childs.parent_id
+		and roots.id=#{id};
+    </select>
+
+    <select id="findChild" parameterType="Department">
+        select * from t_department where id=#{id} limit #{pageNum},#{pageSize};
+    </select>
+
+    <select id="totalOffindChild" parameterType="Department" resultType="_int">
+        select * from t_department where id=#{id};
+    </select>
+
+
+    <select id="findChildAndRoot" parameterType="Department" resultMap="resultDept">
+        select
+            roots.*,
+            childs.id as child_id,
+            childs.create_by as child_create_by,
+            childs.create_time as child_create_time,
+            childs.del_flag as child_del_flag,
+            childs.update_by as child_update_by,
+            childs.update_time as child_update_time,
+            childs.parent_id as child_parent_id,
+            childs.sort_order as child_sort_order,
+            childs.status as child_status,
+            childs.title as child_title,
+            childs.is_parent as child_is_parent
+            from t_department as childs,
+            (select * from t_department where is_parent=1) as roots where roots.id=childs.parent_id
+            <if test="id!=null">
+                and childs.id=#{id}
+            </if>
+            limit #{pageNum},#{pageSize};
+    </select>
+
+    <select id="totalOffindChildAndRoot" parameterType="Department" resultType="_int">
+        select
+        count(*)
+        from t_department as childs,
+        (select * from t_department where is_parent=1) as roots where roots.id=childs.parent_id
+        <if test="id!=null">
+            and childs.id=#{id}
+        </if>
+        limit #{pageNum},#{pageSize};
+    </select>
+
+
+    <insert id="addRoot" parameterType="Department">
+        insert into t_department value(null,#{create_by},#{create_time},#{del_flag},#{update_by},#{update_time},0,#{sort_order},#{status},#{title},1);
+    </insert>
+
+    <insert id="addChild" parameterType="Department">
+         insert into t_department value(null,#{create_by},#{create_time},#{del_flag},#{update_by},#{update_time},#{parent_id},#{sort_order},#{status},#{title},0);
+    </insert>
+
+    <delete id="delete" parameterType="Department">
+        delete from t_department where id=#{id};
+    </delete>
+
+    <update id="update" parameterType="Department">
+        update  t_department
+        <set>
+            <if test="create_by!=null">
+                create_by=#{create_by},
+            </if>
+            <if test="create_time!=null">
+                create_time=#{create_time},
+            </if>
+            <if test="del_flag!=null">
+                del_flag=#{del_flag},
+            </if>
+            <if test="update_by!=null">
+                update_by=#{update_by},
+            </if>
+            <if test="update_time!=null">
+                update_time=#{update_time},
+            </if>
+            <if test="parent_id!=null">
+                parent_id=#{parent_id},
+            </if>
+            <if test="sort_order!=null">
+                sort_order=#{sort_order},
+            </if>
+            <if test="status!=null">
+                status=#{status},
+            </if>
+            <if test="title!=null">
+                title=#{title},
+            </if>
+            <if test="is_parent!=null">
+                is_parent=#{is_parent},
+            </if>
+        </set>
+        where id=#{id}
+    </update>
+</mapper>
